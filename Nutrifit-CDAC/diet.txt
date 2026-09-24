@@ -1,0 +1,131 @@
+🔴 STEP 1: DELETE ALL DIET-RELATED DATA (SAFE ORDER)
+DELETE FROM MealLogs;
+DELETE FROM DietPlanFoods;
+DELETE FROM DietPlans;
+DELETE FROM Foods;
+
+
+DBCC CHECKIDENT ('MealLogs', RESEED, 0);
+DBCC CHECKIDENT ('DietPlanFoods', RESEED, 0);
+DBCC CHECKIDENT ('DietPlans', RESEED, 0);
+DBCC CHECKIDENT ('Foods', RESEED, 0);
+🟢 STEP 2: INSERT FOODS (EXACT USER PROFILE MATCH)
+INSERT INTO Foods 
+(FoodName, FoodType, Calories, Protein, Carbs, Fat, GlycemicIndex, SodiumContent)
+VALUES
+
+
+-- ================= VEGAN =================
+('Oats','Vegan',150,5,27,3,'Low',2),
+('Apple','Vegan',52,0.3,14,0.2,'Low',1),
+('Banana','Vegan',89,1.1,23,0.3,'Medium',1),
+('Brown Rice','Vegan',216,5,45,1.8,'Medium',5),
+('Vegetable Salad','Vegan',80,3,12,1,'Low',10),
+('Sprouts','Vegan',120,10,18,2,'Low',15),
+('Chickpeas','Vegan',164,9,27,2.6,'Low',7),
+('Peanut Butter','Vegan',188,8,6,16,'Low',4),
+
+
+-- ================= VEGETARIAN =================
+('Milk','Vegetarian',120,8,12,5,'Medium',100),
+('Curd','Vegetarian',98,6,8,4,'Low',70),
+('Paneer','Vegetarian',265,18,6,20,'Low',120),
+('Dal','Vegetarian',180,9,22,4,'Low',140),
+('Chapati','Vegetarian',120,3,20,3,'Medium',150),
+('Vegetable Khichdi','Vegetarian',190,7,30,4,'Medium',130),
+('Cheese Sandwich','Vegetarian',210,10,22,9,'Medium',180),
+('Vegetable Soup','Vegetarian',90,4,10,2,'Low',60),
+
+
+-- ================= NON-VEGETARIAN =================
+('Boiled Eggs','Non-Vegetarian',155,13,1,11,'Low',120),
+('Egg Omelette','Non-Vegetarian',170,14,2,13,'Low',140),
+('Grilled Chicken','Non-Vegetarian',220,35,0,5,'Low',90),
+('Chicken Curry','Non-Vegetarian',260,30,6,12,'Low',130),
+('Fish Curry','Non-Vegetarian',240,28,5,10,'Low',110),
+('Chicken Soup','Non-Vegetarian',150,20,5,3,'Low',80),
+('Tuna Salad','Non-Vegetarian',180,30,4,6,'Low',70),
+('Boiled Fish','Non-Vegetarian',200,26,0,9,'Low',95);
+🟢 STEP 3: INSERT ALL POSSIBLE DIET PLANS
+
+(Goal × Condition × FoodPreference × WeightCategory)
+
+👉 3 × 6 × 3 × 3 = 162 diet plans
+
+INSERT INTO DietPlans (Goal, ConditionId, FoodPreference, WeightCategory)
+SELECT g.Goal, h.HealthConditionId, f.FoodPreference, w.WeightCategory
+FROM (VALUES 
+('Weight Loss'),
+('Muscle Gain'),
+('Fitness')
+) g(Goal)
+
+
+CROSS JOIN HealthConditions h
+
+
+CROSS JOIN (VALUES 
+('Vegan'),
+('Vegetarian'),
+('Non-Vegetarian')
+) f(FoodPreference)
+
+
+CROSS JOIN (VALUES 
+('Underweight'),
+('Normal'),
+('Overweight')
+) w(WeightCategory);
+
+✅ Check:
+
+SELECT COUNT(*) AS TotalPlans FROM DietPlans;
+-- must be 162
+🟢 STEP 4: CONNECT EVERY PLAN WITH 5 DAILY MEALS
+
+(breakfast, snack, lunch, snack2, dinner)
+
+;WITH FoodPool AS
+(
+    SELECT 
+        dp.DietId,
+        f.FoodId,
+        ROW_NUMBER() OVER (PARTITION BY dp.DietId ORDER BY NEWID()) AS rn
+    FROM DietPlans dp
+    JOIN Foods f ON f.FoodType = dp.FoodPreference
+)
+
+
+INSERT INTO DietPlanFoods (DietId, FoodId, MealType)
+SELECT 
+    DietId,
+    FoodId,
+    CASE rn
+        WHEN 1 THEN 'breakfast'
+        WHEN 2 THEN 'snack'
+        WHEN 3 THEN 'lunch'
+        WHEN 4 THEN 'snack2'
+        WHEN 5 THEN 'dinner'
+    END
+FROM FoodPool
+WHERE rn <= 5;
+🟢 STEP 5: VERIFY (VERY IMPORTANT)
+✅ Every plan has 5 meals
+SELECT DietId, COUNT(*) TotalMeals
+FROM DietPlanFoods
+GROUP BY DietId
+HAVING COUNT(*) <> 5;
+
+👉 0 rows = PERFECT
+
+✅ Vegan sample
+SELECT dp.DietId, dp.Goal, dp.ConditionId, dp.FoodPreference, dp.WeightCategory,
+       dpf.MealType, f.FoodName
+FROM DietPlans dp
+JOIN DietPlanFoods dpf ON dp.DietId = dpf.DietId
+JOIN Foods f ON dpf.FoodId = f.FoodId
+WHERE dp.FoodPreference = 'Vegan';
+✅ Vegetarian sample
+WHERE dp.FoodPreference = 'Vegetarian';
+✅ Non-Veg sample
+WHERE dp.FoodPreference = 'Non-Vegetarian';

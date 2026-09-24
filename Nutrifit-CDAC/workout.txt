@@ -1,0 +1,145 @@
+DELETE FROM Users;
+DELETE FROM Admins;
+
+
+DBCC CHECKIDENT ('Users', RESEED, 0);
+DBCC CHECKIDENT ('Admin', RESEED, 0);
+
+🔴 RESET
+
+DELETE FROM WorkoutPlanDetails;
+DELETE FROM WorkoutPlans;
+DELETE FROM Workouts;
+DELETE FROM HealthConditions;
+
+
+DBCC CHECKIDENT ('WorkoutPlanDetails', RESEED, 0);
+DBCC CHECKIDENT ('WorkoutPlans', RESEED, 0);
+DBCC CHECKIDENT ('Workouts', RESEED, 0);
+DBCC CHECKIDENT ('HealthConditions', RESEED, 0);
+
+
+🔴 HEALTH CONDITIONS
+
+INSERT INTO HealthConditions (Name, Description) VALUES
+('None','No condition'),
+('Diabetes','Sugar related'),
+('BP','Blood pressure'),
+('Thyroid','Hormonal issue'),
+('PCOS','Hormonal disorder'),
+('Asthma','Breathing issue');
+
+
+🔴 WORKOUTS (MASTER CATALOG – STATIC)
+
+INSERT INTO Workouts (WorkoutName,WorkoutType,Intensity,CaloriesBurnedPerMin,HealthSafe) VALUES
+
+
+-- Cardio
+('Walking','Cardio','Low',4,'Safe for all'),
+('Treadmill Walk','Cardio','Low',5,'Safe for all'),
+('Cycling','Cardio','Moderate',7,'Safe for diabetes, PCOS'),
+('Stationary Bike','Cardio','Moderate',7,'Safe for BP'),
+('Jogging','Cardio','High',9,'Avoid for asthma, BP'),
+('Jump Rope','Cardio','High',12,'Not safe for BP, asthma'),
+('Elliptical','Cardio','Moderate',8,'Low joint impact'),
+
+
+-- Strength (Gym)
+('Push Ups','Strength','Moderate',8,'Safe for all'),
+('Bench Press','Strength','High',10,'Avoid for BP'),
+('Lat Pulldown','Strength','Moderate',9,'Safe for all'),
+('Bicep Curls','Strength','Low',6,'Safe for all'),
+('Squats','Strength','Moderate',9,'Safe for all'),
+('Leg Press','Strength','High',11,'Avoid for BP'),
+('Lunges','Strength','Moderate',9,'Safe for all'),
+
+
+-- Core
+('Plank','Core','Low',6,'Safe for all'),
+('Crunches','Core','Moderate',7,'Safe for all'),
+
+
+-- Recovery
+('Yoga','Flexibility','Low',3,'Safe for all'),
+('Stretching','Flexibility','Low',2,'Safe for all'),
+('Breathing Exercise','Flexibility','Low',1,'Best for asthma, BP'),
+('Meditation','Flexibility','Low',1,'Stress & hormone balance');
+
+🔴 WORKOUT PLANS (AUTO-GENERATED RULES)
+
+INSERT INTO WorkoutPlans (Goal, WeightCategory, ActivityLevel, HealthConditionId, MaxIntensity)
+SELECT 
+    g.Goal,
+    w.WeightCategory,
+    a.ActivityLevel,
+    h.HealthConditionId,
+    CASE 
+        WHEN h.Name IN ('BP','Asthma','Thyroid','PCOS') THEN 'Low'
+        WHEN a.ActivityLevel = 'High' AND h.Name = 'None' THEN 'High'
+        ELSE 'Moderate'
+    END
+FROM (VALUES ('Weight Loss'),('Muscle Gain'),('Fitness')) g(Goal)
+CROSS JOIN (VALUES ('Underweight'),('Normal'),('Overweight')) w(WeightCategory)
+CROSS JOIN (VALUES ('Low'),('Medium'),('High')) a(ActivityLevel)
+CROSS JOIN HealthConditions h
+WHERE NOT (g.Goal='Muscle Gain' AND w.WeightCategory='Overweight')
+  AND NOT (g.Goal='Weight Loss' AND w.WeightCategory='Underweight');
+
+
+🔴 WORKOUT PLAN DETAILS (STATIC WEEKLY TEMPLATES)
+🟢 LOW
+
+INSERT INTO WorkoutPlanDetails (PlanId,WorkoutId,DayName,DurationMinutes)
+SELECT p.PlanId, v.WorkoutId, v.DayName, v.DurationMinutes
+FROM WorkoutPlans p
+CROSS APPLY (VALUES
+(1,'Monday',25),
+(2,'Tuesday',25),
+(18,'Wednesday',20),
+(19,'Thursday',15),
+(20,'Friday',15),
+(1,'Saturday',30)
+) v(WorkoutId,DayName,DurationMinutes)
+WHERE p.MaxIntensity='Low';
+
+🟡 MODERATE
+
+INSERT INTO WorkoutPlanDetails (PlanId,WorkoutId,DayName,DurationMinutes)
+SELECT p.PlanId, v.WorkoutId, v.DayName, v.DurationMinutes
+FROM WorkoutPlans p
+CROSS APPLY (VALUES
+(3,'Monday',30),
+(8,'Tuesday',30),
+(10,'Wednesday',30),
+(12,'Thursday',30),
+(16,'Friday',20),
+(7,'Saturday',30)
+) v(WorkoutId,DayName,DurationMinutes)
+WHERE p.MaxIntensity='Moderate';
+
+🔴 HIGH
+
+INSERT INTO WorkoutPlanDetails (PlanId,WorkoutId,DayName,DurationMinutes)
+SELECT p.PlanId, v.WorkoutId, v.DayName, v.DurationMinutes
+FROM WorkoutPlans p
+CROSS APPLY (VALUES
+(9,'Monday',35),
+(5,'Tuesday',25),
+(13,'Wednesday',35),
+(11,'Thursday',30),
+(17,'Friday',25),
+(6,'Saturday',30)
+) v(WorkoutId,DayName,DurationMinutes)
+WHERE p.MaxIntensity='High';
+
+
+✅ 3. VERIFY (MUST RUN)
+
+SELECT COUNT(*) AS TotalPlans FROM WorkoutPlans;
+SELECT COUNT(*) AS TotalDetails FROM WorkoutPlanDetails;
+
+
+SELECT PlanId, COUNT(*) AS Days
+FROM WorkoutPlanDetails
+GROUP BY PlanId;

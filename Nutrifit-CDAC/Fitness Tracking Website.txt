@@ -1,0 +1,249 @@
+Fitness Tracking Website – Enhanced Detailed Project Modules        
+1️⃣ User Authentication & Profile Module        
+        
+Purpose:        
+        
+Handles user registration, login, profile, and fitness info        
+        
+Features:        
+        
+Register / Login / Logout        
+        
+Password encryption & reset        
+        
+Profile update (age, gender, height, weight, activity level)        
+        
+Food preference: Vegan / Vegetarian / Non-Veg        
+        
+Goal selection: Muscle Gain / Fitness Shape / Flexibility        
+        
+Weight Category: Calculated automatically from BMI        
+        
+Weight Category Calculation:        
+        
+BMI	Category        
+< 18.5	Low        
+18.5–24.9	Normal        
+≥ 25	High        
+        
+Database Tables:        
+        
+users        
+Field	Type	Description        
+user_id (PK)	INT	Unique ID        
+name	VARCHAR	Full name        
+email	VARCHAR	Email        
+password	VARCHAR	Encrypted password        
+role	ENUM('user','admin')	User/Admin        
+created_at	DATETIME	Registration date        
+user_profile        
+Field	Type	Description        
+profile_id (PK)	INT	Profile ID        
+user_id (FK)	INT	Linked user        
+age	INT	Age        
+gender	ENUM('male','female','other')	Gender        
+height	FLOAT	Meters        
+weight	FLOAT	Kg        
+activity_level	ENUM('low','moderate','high')	Activity level        
+goal	ENUM('weight_loss','muscle_gain','flexibility')	Goal        
+food_preference	ENUM('vegan','vegetarian','non_vegetarian')	Food preference        
+bmi	FLOAT	Calculated BMI        
+weight_category	ENUM('low','normal','high')	Derived from BMI        
+2️⃣ Health Condition Module (Expanded)        
+        
+Purpose:        
+        
+Track user health conditions for safe diet & workout recommendations        
+        
+Health Conditions Example:        
+        
+Diabetes        
+        
+BP / Hypertension        
+        
+Thyroid        
+        
+PCOS        
+        
+Asthma        
+        
+None        
+        
+Database Tables:        
+        
+health_conditions        
+Field	Type	Description        
+condition_id (PK)	INT	ID        
+condition_name	VARCHAR	Diabetes / BP / Thyroid / etc.        
+user_health_conditions        
+Field	Type	Description        
+id (PK)	INT	Unique record ID        
+user_id (FK)	INT	User ID        
+condition_id (FK)	INT	Condition ID        
+3️⃣ Diet Module        
+        
+Purpose:        
+        
+Store food items + macros        
+        
+Generate diet plans based on: Food preference, health condition, goal, weight category        
+        
+Database Tables:        
+        
+foods        
+Field	Type	Description        
+food_id (PK)	INT	Food ID        
+food_name	VARCHAR	Name of food        
+food_type	ENUM('vegan','vegetarian','non_vegetarian')	Food preference        
+calories	FLOAT	Per serving        
+protein	FLOAT	g        
+carbs	FLOAT	g        
+fat	FLOAT	g        
+glycemic_index	ENUM('low','medium','high')	For Diabetes tracking        
+sodium_content	FLOAT	mg – For BP        
+meal_logs        
+Field	Type	Description        
+meal_id (PK)	INT	Meal log ID        
+user_id (FK)	INT	User        
+food_id (FK)	INT	Food consumed        
+meal_type	ENUM('breakfast','lunch','dinner','snack')	Meal type        
+quantity	FLOAT	Quantity        
+date	DATE	Meal date        
+diet_plans        
+Field	Type	Description        
+diet_id (PK)	INT	Diet plan ID        
+goal	ENUM('weight_loss','muscle_gain','flexibility')	Goal        
+condition_id (FK)	INT	Health condition        
+food_preference	ENUM('vegan','vegetarian','non_vegetarian')	Food preference        
+weight_category	ENUM('low','normal','high')	Weight category        
+diet_plan_foods        
+Field	Type	Description        
+id (PK)	INT	Record ID        
+diet_id (FK)	INT	Diet plan        
+food_id (FK)	INT	Food included        
+meal_type	ENUM('breakfast','lunch','dinner','snack')	Meal type        
+4️⃣ Workout Module        
+        
+Purpose:        
+        
+Store exercises and workout plans        
+        
+Recommend weekly workouts dynamically based on goal, weight category, health condition        
+        
+Database Tables:        
+        
+workouts        
+Field	Type	Description        
+workout_id (PK)	INT	Workout ID        
+workout_name	VARCHAR	Name of exercise        
+workout_type	ENUM('cardio','strength','flexibility')	Type        
+intensity	ENUM('low','moderate','high')	Intensity        
+calories_burned_per_min	FLOAT	kcal/min        
+health_safe	TEXT	Notes for special conditions (optional)        
+workout_plans        
+Field	Type	Description        
+plan_id (PK)	INT	Plan ID        
+goal	ENUM('weight_loss','muscle_gain','flexibility')	Goal        
+condition_id (FK)	INT	Health condition        
+weight_category	ENUM('low','normal','high')	Weight category        
+max_intensity	ENUM('low','moderate','high')	Max allowed intensity        
+workout_plan_details        
+Field	Type	Description        
+id (PK)	INT	Record ID        
+plan_id (FK)	INT	Workout plan        
+workout_id (FK)	INT	Workout included        
+duration_minutes	INT	Suggested duration per session        
+activity_logs        
+Field	Type	Description        
+activity_id (PK)	INT	Record ID        
+user_id (FK)	INT	User        
+workout_id (FK)	INT	Exercise done        
+duration_minutes	INT	Duration        
+date	DATE	Date        
+5️⃣ Goal & Progress Module        
+        
+Tracks progress and dynamically adjusts recommendations        
+        
+progress_logs        
+Field	Type	Description        
+progress_id (PK)	INT	Record ID        
+user_id (FK)	INT	User        
+weight	FLOAT	Current weight        
+bmi	FLOAT	Current BMI        
+weight_category	ENUM('low','normal','high')	Derived from BMI        
+date	DATE	Record date        
+goals        
+Field	Type	Description        
+goal_id (PK)	INT	Goal ID        
+user_id (FK)	INT	User        
+goal_type	ENUM('muscle_gain','fitness','flexibility')	Goal        
+target_value	FLOAT	Weight / Fitness target        
+start_date	DATE	Goal start date        
+end_date	DATE	Goal end date        
+status	ENUM('in_progress','completed')	Status               
+      
+7️⃣ Admin Module (Full Control)        
+        
+Purpose:        
+        
+Manage users, health conditions, workouts, diet plans dynamically        
+        
+View user logins and activity        
+        
+Delete users → their session is invalidated → they must re-register        
+        
+Admin Features:        
+        
+Add/update/delete workouts dynamically        
+        
+Add/update/delete diet plans dynamically        
+        
+Add/update/delete health conditions dynamically        
+        
+View all users and progress        
+        
+Delete user → removes profile, progress, meals, workouts → session invalidated        
+        
+Admin Tables Use:        
+        
+users (view/delete)        
+        
+workouts / workout_plans / workout_plan_details (CRUD)        
+        
+foods / diet_plans / diet_plan_foods (CRUD)        
+        
+health_conditions (CRUD)        
+        
+Example: User deletion flow:        
+        
+Admin deletes user        
+        
+Delete entries from:        
+        
+user_profile, user_health_conditions, meal_logs, activity_logs, progress_logs, goals        
+        
+End active sessions → user must re-register        
+        
+✅ Key Points        
+        
+Weight category is calculated dynamically → affects workout/diet        
+        
+Health conditions expanded → Diabetes, BP, Thyroid, PCOS, Asthma, None        
+        
+Admin can fully manage users, workouts, diets, health conditions dynamically        
+        
+Recommendation system can handle all combinations:        
+        
+Food preference × Health × Weight category × Goal  
+
+
+
+project name is NutriFit
+database used inbuild sql server in visaul studio dataconnetion
+frontend -react
+backend - asp .net web api visual studio 2026
+use jwt authetication for login
+lastly deployment using aws deployment
+
+
+so wait for my question
